@@ -20,6 +20,14 @@
     <header class="topbar"><span class="brand">인생네컷</span><span id="network" class="status" role="status" aria-live="polite">상태 확인 중</span></header>
     <section class="content" aria-labelledby="heading">
       <div class="preview" aria-hidden="true"><div></div><div></div><div></div><div></div></div>
+      <div class="camera-panel">
+        <video id="preview" autoplay muted playsinline webkit-playsinline aria-label="실시간 카메라 미리보기"></video>
+        <div class="camera-controls">
+          <button id="start-camera" type="button">카메라 시작</button>
+          <button id="switch-camera" type="button" hidden>전환</button>
+        </div>
+        <p id="status" role="status" aria-live="polite">카메라 시작 버튼을 눌러주세요.</p>
+      </div>
       <h1 id="heading">인생네컷</h1>
       <p>홈 화면에서 실행할 수 있는 PWA 기본 화면입니다.</p>
       <p id="mode" class="mode" aria-live="polite"></p>
