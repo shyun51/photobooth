@@ -43,11 +43,38 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
-  // 다른 출처 및 저장소 범위 밖의 요청에는 관여하지 않습니다.
-  if (url.origin !== self.location.origin || !url.pathname.startsWith(new URL('./', self.registration.scope).pathname)) return;
-  event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
-  );
+  if (url.origin !== self.location.origin ||
+      !url.pathname.startsWith(new URL('./', self.registration.scope).pathname)) return;
+
+  event.respondWith((async () => {
+    try {
+      const cached = await caches.match(event.request, { ignoreSearch: true });
+      if (cached) return cached;
+      if (event.request.mode === 'navigate') {
+        const index = await caches.match('./index.html');
+        if (index) return index;
+        const root = await caches.match('./');
+        if (root) return root;
+        try {
+          return await fetch(event.request);
+        } catch (error) {
+          console.error('오프라인 페이지 요청 실패:', error);
+          return new Response('<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>오프라인</title><body><h1>오프라인 상태입니다</h1><p>인터넷에 연결한 뒤 다시 시도해 주세요.</p></body></html>', {
+            status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' }
+          });
+        }
+      }
+      return await fetch(event.request);
+    } catch (error) {
+      console.error('서비스워커 요청 처리 실패:', error);
+      if (event.request.mode === 'navigate') {
+        return new Response('<!doctype html><html lang="ko"><meta charset="utf-8"><body><p>오프라인 상태입니다. 인터넷 연결을 확인해 주세요.</p></body></html>', {
+          status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' }
+        });
+      }
+      return new Response('오프라인 상태입니다.', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    }
+  })());
 });
 
 self.addEventListener('message', (event) => {

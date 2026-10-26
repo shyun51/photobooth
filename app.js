@@ -728,28 +728,39 @@ function refreshButtonState() {
 }
 function reportRefreshError(error) {
   console.error('새로고침 오류:', error);
-  showGlobalError('새로고침 오류: ' + String(error?.message || error));
+  showGlobalError((error?.name || 'Error') + ': ' + (error?.message || String(error)));
 }
 function confirmResultLoss() {
   return !(completed && !composition.hidden) ||
     window.confirm('새로고침하면 현재 촬영 결과가 사라집니다. 계속할까요?');
 }
-function reloadPage() { window.location.reload(); }
+function reloadPage() { window.location.replace(new URL('./', window.location.href).href); }
 
 async function shortRefresh() {
   if (refreshBusy || isCaptureBusy() || !confirmResultLoss()) return;
   refreshBusy = true;
   refreshButtonState();
+  if (!navigator.onLine) {
+    cameraStatus.textContent = '오프라인이라 업데이트는 확인하지 않아요';
+    setTimeout(reloadPage, 1500);
+    return;
+  }
   cameraStatus.textContent = '업데이트 확인 중...';
   let registration = null;
   try {
     if ('serviceWorker' in navigator) {
       registration = await navigator.serviceWorker.getRegistration();
-      if (registration) await registration.update();
+      if (registration) {
+        try {
+          await registration.update();
+        } catch (error) {
+          // 업데이트 검사 오류는 현재 화면 새로고침을 막지 않습니다.
+          console.error('업데이트 확인 실패:', error);
+        }
+      }
     }
   } catch (error) {
-    // 오프라인/업데이트 실패여도 다음 단계로 진행합니다.
-    reportRefreshError(error);
+    console.error('서비스워커 등록 조회 실패:', error);
   }
   const waiting = registration?.waiting;
   if (waiting && 'serviceWorker' in navigator) {
