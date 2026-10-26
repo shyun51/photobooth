@@ -55,7 +55,7 @@ document.querySelector('#test-button').addEventListener('click', () => {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js', { scope: './' })
+    navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' })
       .then(() => console.info('서비스워커 등록 완료'))
       .catch((error) => console.error('서비스워커 등록 실패:', error));
   });
@@ -746,43 +746,74 @@ async function shortRefresh() {
     return;
   }
   cameraStatus.textContent = '업데이트 확인 중...';
-  let registration = null;
   try {
-    if ('serviceWorker' in navigator) {
-      registration = await navigator.serviceWorker.getRegistration();
-      if (registration) {
-        try {
-          await registration.update();
-        } catch (error) {
-          // 업데이트 검사 오류는 현재 화면 새로고침을 막지 않습니다.
-          console.error('업데이트 확인 실패:', error);
-        }
-      }
+    const response = await fetch('./version.js?t=' + Date.now(), { cache: 'no-store' });
+    if (!response.ok) throw new Error('버전 확인 실패: HTTP ' + response.status);
+    const source = await response.text();
+    const found = source.match(/const\s+APP_VERSION\s*=\s*['"](v\d+)['"]/);
+    if (!found) throw new Error('서버 버전 정보를 읽을 수 없어요.');
+    const remoteVersion = found[1];
+    if (remoteVersion === APP_VERSION) {
+      cameraStatus.textContent = '최신 버전입니다 (' + APP_VERSION + ')';
+      setTimeout(reloadPage, 1500);
+      return;
     }
-  } catch (error) {
-    console.error('서비스워커 등록 조회 실패:', error);
-  }
-  const waiting = registration?.waiting;
-  if (waiting && 'serviceWorker' in navigator) {
-    let didReload = false;
-    const finish = () => {
-      if (didReload) return;
-      didReload = true;
-      clearTimeout(fallbackTimer);
-      navigator.serviceWorker.removeEventListener('controllerchange', finish);
+    cameraStatus.textContent = '새 버전 ' + remoteVersion + ' 적용 중...';
+    if (!('serviceWorker' in navigator)) {
+      reloadPage();
+      return;
+    }
+    let registration = await navigator.serviceWorker.getRegistration('./');
+    if (!registration) {
+      registration = await navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' });
+    }
+    let finished = false;
+    let timer = null;
+    const changed = () => {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timer);
+      navigator.serviceWorker.removeEventListener('controllerchange', changed);
       reloadPage();
     };
-    navigator.serviceWorker.addEventListener('controllerchange', finish);
-    const fallbackTimer = setTimeout(finish, 3000);
-    try {
-      waiting.postMessage({ type: 'SKIP_WAITING' });
-    } catch (error) {
-      reportRefreshError(error);
-      finish();
-    }
-  } else {
-    cameraStatus.textContent = '최신 버전입니다 (' + APP_VERSION + ')';
-    setTimeout(reloadPage, 1500);
+    const sendSkip = (worker) => {
+      if (worker && (worker.state === 'installed' || worker.state === 'activating')) {
+        try { worker.postMessage({ type: 'SKIP_WAITING' }); }
+        catch (error) { reportRefreshError(error); }
+      }
+    };
+    const onState = (worker) => {
+      if (!worker) return;
+      sendSkip(worker);
+      worker.addEventListener('statechange', () => sendSkip(worker));
+    };
+    navigator.serviceWorker.addEventListener('controllerchange', changed);
+    timer = setTimeout(async () => {
+      if (finished) return;
+      finished = true;
+      navigator.serviceWorker.removeEventListener('controllerchange', changed);
+      try {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(reg => reg.unregister()));
+        const keys = await caches.keys();
+        await Promise.all(keys.map(key => caches.delete(key)));
+      } catch (error) {
+        reportRefreshError(error);
+      }
+      reloadPage();
+    }, 6000);
+    // 리스너를 먼저 설치하여 설치 완료 이벤트를 놓치지 않습니다.
+    registration.addEventListener('updatefound', () => onState(registration.installing));
+    onState(registration.waiting);
+    onState(registration.installing);
+    await registration.update();
+    onState(registration.waiting);
+    onState(registration.installing);
+  } catch (error) {
+    reportRefreshError(error);
+    cameraStatus.textContent = '업데이트 확인에 실패했어요.';
+    refreshBusy = false;
+    refreshButtonState();
   }
 }
 
