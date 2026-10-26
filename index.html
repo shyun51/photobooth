@@ -50,6 +50,14 @@
     </section>
     <section id="composition" class="composition" aria-label="합성 결과" hidden>
       <h2>인생네컷 완성본</h2>
+      <div class="save-toolbar">
+        <button id="save-result" type="button" disabled>준비 중...</button>
+        <small>공유 창이 열리면 '이미지 저장'을 눌러주세요</small>
+      </div>
+      <div id="save-fallback" class="save-fallback" hidden>
+        <p>이미지를 길게 눌러 '사진에 추가'를 선택하세요</p>
+        <img id="save-fallback-image" alt="완성된 인생네컷 이미지">
+      </div>
       <div class="frame-select" aria-label="프레임 선택">
         <button type="button" data-frame="0" aria-pressed="true">프레임 1</button>
         <button type="button" data-frame="1" aria-pressed="false">프레임 2</button>

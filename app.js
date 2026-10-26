@@ -418,6 +418,7 @@ const visibleCanvas = document.querySelector('#result-canvas');
 const frameButtons = [...document.querySelectorAll('[data-frame]')];
 
 function resetComposition() {
+  resetSaveResult();
   ++composeVersion;
   resultCanvas = null;
   composition.hidden = true;
@@ -469,6 +470,7 @@ async function compose(frameIndex) {
   if (shots.length !== SLOTS.length) return;
   if (!FRAMES[frameIndex]) return;
   selectedFrameIndex = frameIndex;
+  resetSaveResult();
   updateFrameButtons(frameIndex);
   composition.hidden = false;
   composeStatus.textContent = '만드는 중...';
@@ -519,6 +521,7 @@ async function compose(frameIndex) {
     screenCtx.drawImage(resultCanvas, 0, 0);
     composeStatus.textContent = FRAMES[frameIndex].name + ' 합성이 완료됐어요.';
     cameraStatus.textContent = '합성 4단계: 완료';
+    await prepareSaveResult(canvas, version);
   } catch (error) {
     console.error('4컷 합성 오류:', error);
     if (version !== composeVersion) return;
@@ -540,3 +543,98 @@ frameButtons.forEach((button, index) => {
   });
 });
 updateFrameButtons(selectedFrameIndex);
+
+
+// 저장용 PNG는 공유 버튼을 누르기 전에 비동기로 만들어 둡니다.
+let resultBlob = null;
+let resultFile = null;
+let saveFallbackURL = null;
+const saveResultButton = document.querySelector('#save-result');
+const saveFallback = document.querySelector('#save-fallback');
+const saveFallbackImage = document.querySelector('#save-fallback-image');
+
+function resetSaveResult() {
+  resultBlob = null;
+  resultFile = null;
+  saveResultButton.disabled = true;
+  saveResultButton.textContent = '준비 중...';
+  if (saveFallbackURL) URL.revokeObjectURL(saveFallbackURL);
+  saveFallbackURL = null;
+  saveFallbackImage.removeAttribute('src');
+  saveFallback.hidden = true;
+}
+
+function saveFilename() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return 'life4cut-' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) +
+    '-' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()) + '.png';
+}
+
+function canvasPNG(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error('PNG Blob 생성에 실패했어요.'));
+    }, 'image/png');
+  });
+}
+
+async function prepareSaveResult(canvas, version) {
+  try {
+    const blob = await canvasPNG(canvas);
+    // 재합성/다시 찍기로 이전 준비 작업이 무효화된 경우 파일을 게시하지 않습니다.
+    if (version !== composeVersion || resultCanvas !== canvas) return;
+    resultBlob = blob;
+    resultFile = new File([blob], saveFilename(), { type: 'image/png' });
+    saveResultButton.disabled = false;
+    saveResultButton.textContent = '저장하기';
+  } catch (error) {
+    if (version !== composeVersion) return;
+    console.error('PNG 저장 준비 실패:', error);
+    showGlobalError('PNG 저장 준비 실패: ' + String(error));
+    composeStatus.textContent = '저장할 이미지를 준비하지 못했어요.';
+    saveResultButton.disabled = true;
+    saveResultButton.textContent = '준비 실패';
+  }
+}
+
+function showSaveFallback() {
+  if (!resultBlob) return;
+  if (saveFallbackURL) URL.revokeObjectURL(saveFallbackURL);
+  saveFallbackURL = URL.createObjectURL(resultBlob);
+  saveFallbackImage.src = saveFallbackURL;
+  saveFallback.hidden = false;
+  cameraStatus.textContent = "이미지를 길게 눌러 '사진에 추가'를 선택하세요";
+}
+
+function reportShareFailure(error) {
+  console.error('이미지 공유 실패:', error);
+  showGlobalError('이미지 공유 실패: ' + String(error?.message || error));
+  showSaveFallback();
+}
+
+// 사용자 클릭 핸들러: 공유 호출 전에 await를 하지 않습니다.
+saveResultButton.addEventListener('click', () => {
+  if (!resultFile || !resultBlob || saveResultButton.disabled) return;
+  const file = resultFile;
+  const payload = { files: [file], title: '인생네컷' };
+  try {
+    if (typeof navigator.share !== 'function' ||
+        typeof navigator.canShare !== 'function' ||
+        !navigator.canShare({ files: [file] })) {
+      reportShareFailure(new Error('이 기기에서 파일 공유를 사용할 수 없어요.'));
+      return;
+    }
+    // 클릭의 사용자 활성화가 유효한 동안 즉시 호출합니다.
+    navigator.share(payload).then(() => {
+      cameraStatus.textContent = '완료!';
+    }).catch((error) => {
+      if (error?.name === 'AbortError') return;
+      reportShareFailure(error);
+    });
+  } catch (error) {
+    if (error?.name === 'AbortError') return;
+    reportShareFailure(error);
+  }
+});
