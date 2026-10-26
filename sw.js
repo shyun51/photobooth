@@ -28,7 +28,7 @@ self.addEventListener('install', (event) => {
           console.warn('선택 프레임 캐시 생략:', url, error);
         }
       }));
-    }).then(() => self.skipWaiting())
+    })
   );
 });
 
