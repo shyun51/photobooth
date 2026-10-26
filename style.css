@@ -43,3 +43,14 @@ footer { font-size: .78rem; color: #888; text-align: center; }
 .shot-results h2 { font-size: 1rem; text-align: center; }
 .shot-thumbnails { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .shot-thumbnails img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; background: #ddd; border-radius: 8px; }
+
+/* 사진 합성 영역은 CSS로 축소하고 원본 캔버스 픽셀은 보존합니다. */
+.composition { width: min(680px, 100%); margin: 10px auto 32px; text-align: center; }
+.composition[hidden] { display: none; }
+.composition h2 { font-size: 1.1rem; }
+.frame-select { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.frame-select button[aria-pressed="true"] { background: #bf5979; }
+.frame-select button:disabled { opacity: .6; }
+#compose-status { min-height: 1.6em; color: #584b40; }
+.composition-scroll { width: 100%; max-height: min(75dvh, 900px); overflow-y: auto; overscroll-behavior: contain; border: 1px solid #dfd8d1; border-radius: 12px; background: #ece6e2; }
+#result-canvas { display: block; width: 100%; height: auto; }

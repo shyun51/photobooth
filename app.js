@@ -1,5 +1,18 @@
 'use strict';
 
+// 합성 규격 — 사용자가 여기에서 수정할 수 있습니다.
+const OUT_W = 1200, OUT_H = 3600;
+const SLOTS = [
+  {x:100, y:120,  w:1000, h:750},
+  {x:100, y:910,  w:1000, h:750},
+  {x:100, y:1700, w:1000, h:750},
+  {x:100, y:2490, w:1000, h:750},
+];
+const FRAMES = [
+  {name:'프레임 1', src:'./frames/frame1.png', bg:'#ffffff'},
+  {name:'프레임 2', src:'./frames/frame2.png', bg:'#ffe4ec'},
+];
+
 const network = document.querySelector('#network');
 const mode = document.querySelector('#mode');
 const feedback = document.querySelector('#feedback');
@@ -176,6 +189,7 @@ function releaseThumbnails() {
 }
 
 function clearShotData() {
+  resetComposition();
   shots.length = 0;
   releaseThumbnails();
 }
@@ -280,6 +294,8 @@ function renderThumbnails() {
     shotThumbnails.appendChild(img);
   });
   shotResults.hidden = false;
+  // 촬영 완료에서 기존 썸네일 표시 동작을 유지하며 합성만 추가합니다.
+  void compose(selectedFrameIndex);
 }
 
 async function startShooting() {
@@ -371,3 +387,130 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 updateShootReady();
+
+
+// 프레임 합성 단계. shots에는 이미 전면 거울 반전이 적용되어 있습니다.
+let resultCanvas = null;
+let selectedFrameIndex = 0;
+let composeVersion = 0;
+const composition = document.querySelector('#composition');
+const composeStatus = document.querySelector('#compose-status');
+const visibleCanvas = document.querySelector('#result-canvas');
+const frameButtons = [...document.querySelectorAll('[data-frame]')];
+
+function resetComposition() {
+  ++composeVersion;
+  resultCanvas = null;
+  composition.hidden = true;
+  composeStatus.textContent = '';
+  const context = visibleCanvas.getContext('2d');
+  if (context) context.clearRect(0, 0, visibleCanvas.width, visibleCanvas.height);
+  frameButtons.forEach((button) => { button.disabled = false; });
+}
+
+function updateFrameButtons(index) {
+  frameButtons.forEach((button, i) => {
+    button.setAttribute('aria-pressed', String(index === i));
+  });
+}
+
+function drawCover(ctx, source, slot) {
+  const iw = source.width, ih = source.height;
+  if (!iw || !ih || slot.w <= 0 || slot.h <= 0) throw new Error('InvalidImageDimensions');
+  const ratio = Math.max(slot.w / iw, slot.h / ih);
+  const sw = slot.w / ratio, sh = slot.h / ratio;
+  const sx = (iw - sw) / 2, sy = (ih - sh) / 2;
+  ctx.drawImage(source, sx, sy, sw, sh, slot.x, slot.y, slot.w, slot.h);
+}
+
+function fallbackLabel(ctx) {
+  const now = new Date();
+  const date = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('.');
+  ctx.save();
+  ctx.fillStyle = '#242424';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '42px sans-serif';
+  ctx.fillText(date, OUT_W / 2, OUT_H - 240);
+  ctx.font = 'bold 76px sans-serif';
+  ctx.fillText('인생네컷', OUT_W / 2, OUT_H - 145);
+  ctx.restore();
+}
+
+async function loadFrame(src) {
+  // 실패할 수 있는 선택 리소스: 없으면 기본 프레임을 사용합니다.
+  const response = await fetch(src);
+  if (!response.ok) throw new Error('FrameHTTP' + response.status);
+  const blob = await response.blob();
+  return createImageBitmap(blob);
+}
+
+async function compose(frameIndex) {
+  const version = ++composeVersion;
+  if (shots.length !== SLOTS.length) return;
+  if (!FRAMES[frameIndex]) return;
+  selectedFrameIndex = frameIndex;
+  updateFrameButtons(frameIndex);
+  composition.hidden = false;
+  composeStatus.textContent = '만드는 중...';
+  frameButtons.forEach((button) => { button.disabled = true; });
+  let bitmap = null;
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = OUT_W;
+    canvas.height = OUT_H;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('CanvasUnavailable');
+    ctx.fillStyle = FRAMES[frameIndex].bg;
+    ctx.fillRect(0, 0, OUT_W, OUT_H);
+
+    for (let i = 0; i < SLOTS.length; i++) {
+      bitmap = await createImageBitmap(shots[i]);
+      if (version !== composeVersion) return;
+      drawCover(ctx, bitmap, SLOTS[i]);
+      bitmap.close();
+      bitmap = null;
+    }
+
+    try {
+      bitmap = await loadFrame(FRAMES[frameIndex].src);
+      if (version !== composeVersion) return;
+      ctx.drawImage(bitmap, 0, 0, OUT_W, OUT_H);
+    } catch (frameError) {
+      console.warn('프레임 PNG를 불러오지 못해 기본 프레임으로 표시합니다:', frameError);
+      fallbackLabel(ctx);
+    } finally {
+      if (bitmap) {
+        bitmap.close();
+        bitmap = null;
+      }
+    }
+
+    if (version !== composeVersion) return;
+    resultCanvas = canvas;
+    const screenCtx = visibleCanvas.getContext('2d');
+    if (!screenCtx) throw new Error('PreviewCanvasUnavailable');
+    visibleCanvas.width = OUT_W;
+    visibleCanvas.height = OUT_H;
+    screenCtx.drawImage(resultCanvas, 0, 0);
+    composeStatus.textContent = FRAMES[frameIndex].name + ' 합성이 완료됐어요.';
+  } catch (error) {
+    console.error('4컷 합성 오류:', error);
+    if (version !== composeVersion) return;
+    resultCanvas = null;
+    composeStatus.textContent = '사진을 합성하지 못했어요. 프레임을 다시 선택해 주세요.';
+  } finally {
+    if (bitmap) bitmap.close();
+    if (version === composeVersion) {
+      frameButtons.forEach((button) => { button.disabled = false; });
+    }
+  }
+}
+
+frameButtons.forEach((button, index) => {
+  button.textContent = FRAMES[index].name;
+  button.addEventListener('click', () => {
+    if (shots.length === SLOTS.length) void compose(index);
+  });
+});
+updateFrameButtons(selectedFrameIndex);

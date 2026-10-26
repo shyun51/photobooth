@@ -48,6 +48,17 @@
       <h2>촬영된 사진 4컷</h2>
       <div id="shot-thumbnails" class="shot-thumbnails"></div>
     </section>
+    <section id="composition" class="composition" aria-label="합성 결과" hidden>
+      <h2>인생네컷 완성본</h2>
+      <div class="frame-select" aria-label="프레임 선택">
+        <button type="button" data-frame="0" aria-pressed="true">프레임 1</button>
+        <button type="button" data-frame="1" aria-pressed="false">프레임 2</button>
+      </div>
+      <p id="compose-status" role="status" aria-live="polite"></p>
+      <div class="composition-scroll">
+        <canvas id="result-canvas" width="1200" height="3600" aria-label="합성된 네 컷 사진"></canvas>
+      </div>
+    </section>
     <footer>© 인생네컷 · PWA Starter</footer>
   </main>
 </body>
