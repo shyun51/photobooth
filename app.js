@@ -711,3 +711,137 @@ const updateNoticeObserver = new MutationObserver(refreshUpdateNotice);
 updateNoticeObserver.observe(document.querySelector('#shot-progress'), { attributes: true, attributeFilter: ['hidden'] });
 updateNoticeObserver.observe(document.querySelector('#shoot-cancel'), { attributes: true, attributeFilter: ['hidden'] });
 document.addEventListener('visibilitychange', refreshUpdateNotice);
+
+
+// 수동 새로고침: 기존 서비스워커 등록/촬영 처리와 별개로 동작합니다.
+const refreshButton = document.querySelector('#btn-refresh');
+let refreshHoldTimer = null;
+let refreshHeld = false;
+let refreshBusy = false;
+let touchGestureActive = false;
+
+function isCaptureBusy() {
+  return shooting || !shootCancel.hidden;
+}
+function refreshButtonState() {
+  refreshButton.disabled = refreshBusy || isCaptureBusy();
+}
+function reportRefreshError(error) {
+  console.error('새로고침 오류:', error);
+  showGlobalError('새로고침 오류: ' + String(error?.message || error));
+}
+function confirmResultLoss() {
+  return !(completed && !composition.hidden) ||
+    window.confirm('새로고침하면 현재 촬영 결과가 사라집니다. 계속할까요?');
+}
+function reloadPage() { window.location.reload(); }
+
+async function shortRefresh() {
+  if (refreshBusy || isCaptureBusy() || !confirmResultLoss()) return;
+  refreshBusy = true;
+  refreshButtonState();
+  cameraStatus.textContent = '업데이트 확인 중...';
+  let registration = null;
+  try {
+    if ('serviceWorker' in navigator) {
+      registration = await navigator.serviceWorker.getRegistration();
+      if (registration) await registration.update();
+    }
+  } catch (error) {
+    // 오프라인/업데이트 실패여도 다음 단계로 진행합니다.
+    reportRefreshError(error);
+  }
+  const waiting = registration?.waiting;
+  if (waiting && 'serviceWorker' in navigator) {
+    let didReload = false;
+    const finish = () => {
+      if (didReload) return;
+      didReload = true;
+      clearTimeout(fallbackTimer);
+      navigator.serviceWorker.removeEventListener('controllerchange', finish);
+      reloadPage();
+    };
+    navigator.serviceWorker.addEventListener('controllerchange', finish);
+    const fallbackTimer = setTimeout(finish, 3000);
+    try {
+      waiting.postMessage({ type: 'SKIP_WAITING' });
+    } catch (error) {
+      reportRefreshError(error);
+      finish();
+    }
+  } else {
+    cameraStatus.textContent = '최신 버전입니다 (' + APP_VERSION + ')';
+    setTimeout(reloadPage, 1500);
+  }
+}
+
+async function longRefresh() {
+  if (refreshBusy || isCaptureBusy()) return;
+  if (!window.confirm('저장된 앱 데이터(캐시)를 지우고 다시 불러올게요. 인터넷에 연결되어 있어야 해요. 계속할까요?')) return;
+  if (!navigator.onLine) {
+    cameraStatus.textContent = '인터넷에 연결된 상태에서 눌러주세요. 지금 지우면 앱이 열리지 않을 수 있어요.';
+    return;
+  }
+  if (!confirmResultLoss()) return;
+  refreshBusy = true;
+  refreshButtonState();
+  try {
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(async (registration) => {
+        const ok = await registration.unregister();
+        if (!ok) throw new Error('서비스워커 해제 실패');
+      }));
+    }
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(async (key) => {
+        if (!(await caches.delete(key))) throw new Error('캐시 삭제 실패: ' + key);
+      }));
+    }
+    reloadPage();
+  } catch (error) {
+    reportRefreshError(error);
+    cameraStatus.textContent = '초기화에 실패했어요. 다시 시도해 주세요.';
+    refreshBusy = false;
+    refreshButtonState();
+  }
+}
+
+function clearRefreshHold() {
+  if (refreshHoldTimer !== null) clearTimeout(refreshHoldTimer);
+  refreshHoldTimer = null;
+}
+refreshButton.addEventListener('touchstart', () => {
+  if (refreshButton.disabled) return;
+  touchGestureActive = true;
+  refreshHeld = false;
+  clearRefreshHold();
+  refreshHoldTimer = setTimeout(() => {
+    refreshHoldTimer = null;
+    refreshHeld = true;
+    void longRefresh();
+  }, 1500);
+}, { passive: true });
+refreshButton.addEventListener('touchend', (event) => {
+  clearRefreshHold();
+  if (refreshHeld) {
+    event.preventDefault(); // 길게 누른 뒤 합성 click이 함께 발생하지 않게 합니다.
+  }
+  touchGestureActive = false;
+}, { passive: false });
+refreshButton.addEventListener('touchcancel', () => {
+  clearRefreshHold();
+  touchGestureActive = false;
+});
+refreshButton.addEventListener('click', () => {
+  if (refreshHeld) {
+    refreshHeld = false;
+    return;
+  }
+  if (!touchGestureActive) void shortRefresh();
+});
+const refreshStateObserver = new MutationObserver(refreshButtonState);
+refreshStateObserver.observe(shootCancel, { attributes: true, attributeFilter: ['hidden'] });
+refreshStateObserver.observe(shotProgress, { attributes: true, attributeFilter: ['hidden'] });
+refreshButtonState();

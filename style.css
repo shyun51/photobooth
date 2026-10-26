@@ -75,3 +75,9 @@ footer { font-size: .78rem; color: #888; text-align: center; }
 #version-indicator #ver.version-mismatch { color: #cf1728; font-weight: bold; border: 1px solid currentColor; }
 #update-app { margin: 0; min-height: 28px; padding: 6px 9px; border-radius: 7px; font: 12px/1.25 sans-serif; }
 #update-app[hidden] { display: none; }
+
+/* 수동 새로고침 / 강제 초기화 */
+.refresh-control { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+#btn-refresh { width: 44px; height: 44px; min-width: 44px; min-height: 44px; margin: 0; padding: 0; font: 25px/1 sans-serif; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+#btn-refresh:disabled { opacity: .45; cursor: not-allowed; }
+.refresh-control small { font: 10px/1.1 sans-serif; max-width: 146px; text-align: center; color: #444; background: #ffffffeb; border-radius: 4px; padding: 2px; }
