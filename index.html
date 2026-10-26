@@ -21,11 +21,21 @@
     <section class="content" aria-labelledby="heading">
       <div class="preview" aria-hidden="true"><div></div><div></div><div></div><div></div></div>
       <div class="camera-panel">
-        <video id="preview" autoplay muted playsinline webkit-playsinline aria-label="실시간 카메라 미리보기"></video>
+        <div class="camera-stage">
+          <video id="preview" autoplay muted playsinline webkit-playsinline aria-label="실시간 카메라 미리보기"></video>
+          <div id="countdown" class="countdown" aria-live="off" hidden></div>
+          <div id="flash" class="flash" aria-hidden="true"></div>
+        </div>
         <div class="camera-controls">
           <button id="start-camera" type="button">카메라 시작</button>
           <button id="switch-camera" type="button" hidden>전환</button>
         </div>
+        <div class="shoot-controls">
+          <button id="shoot-start" type="button" disabled>촬영 시작</button>
+          <button id="shoot-cancel" type="button" hidden>취소</button>
+          <button id="shoot-retry" type="button" hidden>다시 찍기</button>
+        </div>
+        <p id="shot-progress" aria-live="polite" hidden></p>
         <p id="status" role="status" aria-live="polite">카메라 시작 버튼을 눌러주세요.</p>
       </div>
       <h1 id="heading">인생네컷</h1>
@@ -33,6 +43,10 @@
       <p id="mode" class="mode" aria-live="polite"></p>
       <button id="test-button" type="button">작동 확인</button>
       <p id="feedback" aria-live="polite"></p>
+    </section>
+    <section id="shot-results" class="shot-results" aria-label="촬영 결과" hidden>
+      <h2>촬영된 사진 4컷</h2>
+      <div id="shot-thumbnails" class="shot-thumbnails"></div>
     </section>
     <footer>© 인생네컷 · PWA Starter</footer>
   </main>

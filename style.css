@@ -27,3 +27,19 @@ footer { font-size: .78rem; color: #888; text-align: center; }
 .camera-controls button[hidden] { display: none; }
 .camera-controls button:disabled { opacity: .55; cursor: not-allowed; }
 #status { font-size: .9rem; color: #584b40; min-height: 1.6em; }
+
+/* 연속 촬영 UI */
+.camera-stage { position: relative; width: 100%; overflow: hidden; border-radius: 16px; background: #292929; }
+.camera-stage #preview { border-radius: 0; }
+.countdown { position: absolute; inset: 0; display: grid; place-items: center; color: white; font-size: clamp(5rem, 18vw, 9rem); font-weight: 900; text-shadow: 0 2px 18px #0009; pointer-events: none; }
+.countdown[hidden], .shoot-controls button[hidden], .shot-results[hidden], #shot-progress[hidden] { display: none; }
+.flash { position: absolute; inset: 0; background: white; opacity: 0; pointer-events: none; }
+.flash.active { animation: photo-flash .15s ease-out; }
+@keyframes photo-flash { 0% { opacity: 1; } 100% { opacity: 0; } }
+.shoot-controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.shoot-controls button:disabled { opacity: .5; cursor: not-allowed; }
+#shot-progress { font-weight: 700; font-variant-numeric: tabular-nums; }
+.shot-results { width: min(680px, 100%); margin: 16px auto 24px; }
+.shot-results h2 { font-size: 1rem; text-align: center; }
+.shot-thumbnails { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.shot-thumbnails img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; background: #ddd; border-radius: 8px; }

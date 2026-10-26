@@ -1,7 +1,7 @@
 'use strict';
 
 // 배포 업데이트 시 이 버전을 변경하면 이전 캐시가 삭제됩니다.
-const CACHE_NAME = 'insaeng-necut-shell-v2';
+const CACHE_NAME = 'insaeng-necut-shell-v3';
 const APP_SHELL = [
   './',
   './index.html',
