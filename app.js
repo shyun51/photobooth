@@ -1,5 +1,8 @@
 'use strict';
 
+// 화면에 표시할 버전은 version.js에서만 관리합니다.
+document.querySelector('#ver').textContent = APP_VERSION;
+
 // 전역 오류 진단: 실행 중 예외와 처리되지 않은 Promise 거부를 화면에 표시합니다.
 function showGlobalError(message) {
   const box = document.querySelector('#global-error');
@@ -638,3 +641,73 @@ saveResultButton.addEventListener('click', () => {
     reportShareFailure(error);
   }
 });
+
+
+// 업데이트 감지는 카메라/촬영/합성 동작과 분리해 처리합니다.
+const updateAppButton = document.querySelector('#update-app');
+const versionIndicator = document.querySelector('#ver');
+let swRegistrationForUpdate = null;
+let requestedUpdateActivation = false;
+
+function refreshUpdateNotice() {
+  const waiting = swRegistrationForUpdate?.waiting;
+  updateAppButton.hidden = !waiting || shooting || document.hidden;
+}
+
+function compareWorkerVersion() {
+  if (!navigator.serviceWorker?.controller) {
+    versionIndicator.classList.remove('version-mismatch');
+    return;
+  }
+  const channel = new MessageChannel();
+  channel.port1.onmessage = (event) => {
+    const workerVersion = event.data?.version;
+    if (typeof workerVersion === 'string') {
+      versionIndicator.classList.toggle('version-mismatch', workerVersion !== APP_VERSION);
+    }
+    channel.port1.close();
+  };
+  navigator.serviceWorker.controller.postMessage({ type: 'GET_APP_VERSION' }, [channel.port2]);
+}
+
+function watchServiceWorker(registration) {
+  swRegistrationForUpdate = registration;
+  refreshUpdateNotice();
+  registration.addEventListener('updatefound', () => {
+    const installing = registration.installing;
+    if (!installing) return;
+    installing.addEventListener('statechange', () => {
+      if (installing.state === 'installed') refreshUpdateNotice();
+    });
+  });
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.ready.then((registration) => {
+    watchServiceWorker(registration);
+    compareWorkerVersion();
+  }).catch((error) => console.error('업데이트 감지 실패:', error));
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (requestedUpdateActivation) {
+      window.location.reload();
+      return;
+    }
+    compareWorkerVersion();
+    refreshUpdateNotice();
+  });
+}
+
+updateAppButton.addEventListener('click', () => {
+  if (shooting) return;
+  const waiting = swRegistrationForUpdate?.waiting;
+  if (!waiting) return;
+  requestedUpdateActivation = true;
+  updateAppButton.hidden = true;
+  waiting.postMessage({ type: 'SKIP_WAITING' });
+});
+
+// 촬영 진행 상태를 지속적으로 반영하며 촬영 로직은 수정하지 않습니다.
+const updateNoticeObserver = new MutationObserver(refreshUpdateNotice);
+updateNoticeObserver.observe(document.querySelector('#shot-progress'), { attributes: true, attributeFilter: ['hidden'] });
+updateNoticeObserver.observe(document.querySelector('#shoot-cancel'), { attributes: true, attributeFilter: ['hidden'] });
+document.addEventListener('visibilitychange', refreshUpdateNotice);

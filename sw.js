@@ -1,12 +1,14 @@
 'use strict';
+importScripts('./version.js');
 
 // 배포 업데이트 시 이 버전을 변경하면 이전 캐시가 삭제됩니다.
-const CACHE_NAME = 'insaeng-necut-shell-v6';
+const CACHE_NAME = 'photobooth-' + APP_VERSION;
 const APP_SHELL = [
   './',
   './index.html',
   './style.css',
   './app.js',
+  './version.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png'
@@ -33,7 +35,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(
-      keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+      keys.filter((key) => key !== CACHE_NAME && (key.startsWith('photobooth-') || key.startsWith('insaeng-necut-shell-'))).map((key) => caches.delete(key))
     )).then(() => self.clients.claim())
   );
 });
@@ -46,4 +48,12 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((cached) => cached || fetch(event.request))
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    event.waitUntil(self.skipWaiting());
+  } else if (event.data?.type === 'GET_APP_VERSION') {
+    event.ports[0]?.postMessage({ version: APP_VERSION, cache: CACHE_NAME });
+  }
 });
