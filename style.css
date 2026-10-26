@@ -54,3 +54,8 @@ footer { font-size: .78rem; color: #888; text-align: center; }
 #compose-status { min-height: 1.6em; color: #584b40; }
 .composition-scroll { width: 100%; max-height: min(75dvh, 900px); overflow-y: auto; overscroll-behavior: contain; border: 1px solid #dfd8d1; border-radius: 12px; background: #ece6e2; }
 #result-canvas { display: block; width: 100%; height: auto; }
+
+/* 진단 HUD */
+#ver { position: fixed; right: calc(8px + env(safe-area-inset-right)); bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 1000; font: 12px sans-serif; color: #555; background: #ffffffd9; border-radius: 4px; padding: 3px 5px; pointer-events: none; }
+#global-error { position: fixed; left: calc(10px + env(safe-area-inset-left)); right: calc(10px + env(safe-area-inset-right)); bottom: calc(34px + env(safe-area-inset-bottom)); z-index: 1001; background: #bd1c25; color: #fff; padding: 12px; border-radius: 10px; font: 13px/1.4 sans-serif; overflow-wrap: anywhere; box-shadow: 0 3px 16px #0005; cursor: pointer; max-height: 35dvh; overflow-y: auto; }
+#global-error[hidden] { display: none; }

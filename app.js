@@ -1,5 +1,23 @@
 'use strict';
 
+// 전역 오류 진단: 실행 중 예외와 처리되지 않은 Promise 거부를 화면에 표시합니다.
+function showGlobalError(message) {
+  const box = document.querySelector('#global-error');
+  if (!box) return;
+  box.textContent = message;
+  box.hidden = false;
+}
+window.addEventListener('error', (e) => {
+  const file = e.filename ? e.filename.split('/').pop() : '파일 미상';
+  showGlobalError(String(e.message || '알 수 없는 오류') + ' (' + file + ':' + (e.lineno || '?') + ')');
+});
+window.addEventListener('unhandledrejection', (e) => {
+  const reason = e.reason;
+  showGlobalError('처리되지 않은 Promise 오류: ' + (reason instanceof Error ? reason.stack || reason.message : String(reason)));
+});
+document.querySelector('#global-error')?.addEventListener('click', (e) => { e.currentTarget.hidden = true; });
+
+
 // 합성 규격 — 사용자가 여기에서 수정할 수 있습니다.
 const OUT_W = 1200, OUT_H = 3600;
 const SLOTS = [
@@ -295,6 +313,7 @@ function renderThumbnails() {
   });
   shotResults.hidden = false;
   // 촬영 완료에서 기존 썸네일 표시 동작을 유지하며 합성만 추가합니다.
+  cameraStatus.textContent = '합성 시작';
   void compose(selectedFrameIndex);
 }
 
@@ -341,7 +360,7 @@ async function startShooting() {
     shootRetry.hidden = false;
     countdown.hidden = true;
     shotProgress.textContent = `${SHOT_COUNT} / ${SHOT_COUNT}`;
-    cameraStatus.textContent = '4컷 촬영 완료!';
+    cameraStatus.textContent = '4컷 촬영 완료! 합성을 준비합니다.';
     renderThumbnails();
   } catch (error) {
     if (run !== shootRun) return;
@@ -453,9 +472,11 @@ async function compose(frameIndex) {
   updateFrameButtons(frameIndex);
   composition.hidden = false;
   composeStatus.textContent = '만드는 중...';
+  cameraStatus.textContent = '합성 시작 · 만드는 중...';
   frameButtons.forEach((button) => { button.disabled = true; });
   let bitmap = null;
   try {
+    cameraStatus.textContent = '합성 1단계: 캔버스 생성';
     const canvas = document.createElement('canvas');
     canvas.width = OUT_W;
     canvas.height = OUT_H;
@@ -465,6 +486,7 @@ async function compose(frameIndex) {
     ctx.fillRect(0, 0, OUT_W, OUT_H);
 
     for (let i = 0; i < SLOTS.length; i++) {
+      cameraStatus.textContent = '합성 2단계: 사진 그리기 ' + (i + 1) + ' / ' + SLOTS.length;
       bitmap = await createImageBitmap(shots[i]);
       if (version !== composeVersion) return;
       drawCover(ctx, bitmap, SLOTS[i]);
@@ -472,12 +494,14 @@ async function compose(frameIndex) {
       bitmap = null;
     }
 
+    cameraStatus.textContent = '합성 3단계: 프레임 로드';
     try {
       bitmap = await loadFrame(FRAMES[frameIndex].src);
       if (version !== composeVersion) return;
       ctx.drawImage(bitmap, 0, 0, OUT_W, OUT_H);
     } catch (frameError) {
       console.warn('프레임 PNG를 불러오지 못해 기본 프레임으로 표시합니다:', frameError);
+      cameraStatus.textContent = '프레임 파일 없음 · 기본 프레임 적용';
       fallbackLabel(ctx);
     } finally {
       if (bitmap) {
@@ -494,11 +518,13 @@ async function compose(frameIndex) {
     visibleCanvas.height = OUT_H;
     screenCtx.drawImage(resultCanvas, 0, 0);
     composeStatus.textContent = FRAMES[frameIndex].name + ' 합성이 완료됐어요.';
+    cameraStatus.textContent = '합성 4단계: 완료';
   } catch (error) {
     console.error('4컷 합성 오류:', error);
     if (version !== composeVersion) return;
     resultCanvas = null;
     composeStatus.textContent = '사진을 합성하지 못했어요. 프레임을 다시 선택해 주세요.';
+    cameraStatus.textContent = '합성 오류: 결과를 만들지 못했어요.';
   } finally {
     if (bitmap) bitmap.close();
     if (version === composeVersion) {
