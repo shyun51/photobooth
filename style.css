@@ -1,0 +1,20 @@
+:root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; background: #f8f6f2; color: #191919; }
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body { min-height: 100vh; min-height: 100dvh; }
+.app { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; padding: calc(20px + env(safe-area-inset-top)) calc(22px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(22px + env(safe-area-inset-left)); }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.brand { font-weight: 800; letter-spacing: -.04em; }
+.status { color: #555; font-size: .82rem; }
+.content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; }
+.preview { width: min(205px, 52vw); padding: 12px 12px 30px; display: grid; gap: 6px; background: #222; transform: rotate(-4deg); box-shadow: 0 12px 35px #0002; }
+.preview div { background: #edcbc7; aspect-ratio: 1.8; }
+.preview div:nth-child(2) { background: #e9d8bb; }
+.preview div:nth-child(3) { background: #cbd9d4; }
+.preview div:nth-child(4) { background: #ddd0e4; }
+h1 { margin: 24px 0 0; font-size: clamp(2rem, 7vw, 3rem); letter-spacing: -.05em; }
+p { margin: 3px 0; line-height: 1.6; }
+.mode { color: #6d625a; font-size: .94rem; }
+button { margin-top: 10px; border: 0; border-radius: 14px; background: #191919; color: white; font: inherit; font-weight: 700; padding: 14px 24px; min-height: 48px; cursor: pointer; }
+button:active { transform: scale(.98); }
+footer { font-size: .78rem; color: #888; text-align: center; }

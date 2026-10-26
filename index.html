@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#191919">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="인생네컷">
+  <meta name="description" content="오프라인에서도 실행되는 인생네컷 PWA">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="./icons/icon-512.png">
+  <link rel="stylesheet" href="./style.css">
+  <title>인생네컷</title>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar"><span class="brand">인생네컷</span><span id="network" class="status" role="status" aria-live="polite">상태 확인 중</span></header>
+    <section class="content" aria-labelledby="heading">
+      <div class="preview" aria-hidden="true"><div></div><div></div><div></div><div></div></div>
+      <h1 id="heading">인생네컷</h1>
+      <p>홈 화면에서 실행할 수 있는 PWA 기본 화면입니다.</p>
+      <p id="mode" class="mode" aria-live="polite"></p>
+      <button id="test-button" type="button">작동 확인</button>
+      <p id="feedback" aria-live="polite"></p>
+    </section>
+    <footer>© 인생네컷 · PWA Starter</footer>
+  </main>
+</body>
+</html>
