@@ -337,7 +337,9 @@ async function startShooting() {
   try {
     for (let i = 0; i < SHOT_COUNT; i++) {
       ensureCurrent(run);
-      shotProgress.textContent = `${i + 1} / ${SHOT_COUNT}`;\n      guideCut = i + 1;\n      renderGuide();
+      shotProgress.textContent = `${i + 1} / ${SHOT_COUNT}`;
+      guideCut = i + 1;
+      renderGuide();
       for (let second = COUNTDOWN_SEC; second > 0; second--) {
         ensureCurrent(run);
         countdown.hidden = false;
@@ -362,7 +364,8 @@ async function startShooting() {
     countdown.hidden = true;
     shotProgress.textContent = `${SHOT_COUNT} / ${SHOT_COUNT}`;
     cameraStatus.textContent = '4컷 촬영 완료! 합성을 준비합니다.';
-    renderThumbnails();\n    renderGuide();
+    renderThumbnails();
+    renderGuide();
   } catch (error) {
     if (run !== shootRun) return;
     if (error.message === 'CameraNotReady') {
