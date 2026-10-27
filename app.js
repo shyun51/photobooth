@@ -29,10 +29,8 @@ const SLOTS = [
   {x:100, y:1700, w:1000, h:750},
   {x:100, y:2490, w:1000, h:750},
 ];
-const FRAMES = [
-  {name:'프레임 1', src:'./frames/frame1.png', bg:'#ffffff'},
-  {name:'프레임 2', src:'./frames/frame2.png', bg:'#ffe4ec'},
-];
+const FRAME_MAX = 20;
+const FRAMES = [];
 
 const network = document.querySelector('#network');
 const mode = document.querySelector('#mode');
