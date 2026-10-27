@@ -23,11 +23,11 @@
       <div class="preview" aria-hidden="true"><div></div><div></div><div></div><div></div></div>
       <div class="camera-panel">
         <div class="camera-stage">
-          <video id="preview" autoplay muted playsinline webkit-playsinline aria-label="실시간 카메라 미리보기"></video>
+          <div id="preview-wrap"><video id="preview" autoplay muted playsinline webkit-playsinline aria-label="실시간 카메라 미리보기"></video><canvas id="guide" width="1000" height="750" aria-hidden="true"></canvas></div>
           <div id="countdown" class="countdown" aria-live="off" hidden></div>
           <div id="flash" class="flash" aria-hidden="true"></div>
         </div>
-        <div class="camera-controls">
+        <div class="guide-controls"><label><input id="guide-toggle" type="checkbox" checked> 가이드</label><label>투명도 <input id="guide-opacity" type="range" min="0.2" max="0.9" step="0.05" value="0.55"></label></div><div id="frame-picker" class="frame-picker" aria-label="촬영 프레임 선택"></div><div class="camera-controls">
           <button id="start-camera" type="button">카메라 시작</button>
           <button id="switch-camera" type="button" hidden>전환</button>
         </div>

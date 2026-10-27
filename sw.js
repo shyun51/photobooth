@@ -13,7 +13,7 @@ const APP_SHELL = [
   './icons/icon-192.png',
   './icons/icon-512.png'
 ];
-const OPTIONAL_FRAMES = ['./frames/frame1.png', './frames/frame2.png'];
+const OPTIONAL_FRAMES = ['./frames.json', ...Array.from({length:20}, (_,i) => './frames/frame' + (i+1) + '.png')];
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {

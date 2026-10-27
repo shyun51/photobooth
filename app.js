@@ -339,7 +339,7 @@ async function startShooting() {
   try {
     for (let i = 0; i < SHOT_COUNT; i++) {
       ensureCurrent(run);
-      shotProgress.textContent = `${i + 1} / ${SHOT_COUNT}`;
+      shotProgress.textContent = `${i + 1} / ${SHOT_COUNT}`;\n      guideCut = i + 1;\n      renderGuide();
       for (let second = COUNTDOWN_SEC; second > 0; second--) {
         ensureCurrent(run);
         countdown.hidden = false;
@@ -364,7 +364,7 @@ async function startShooting() {
     countdown.hidden = true;
     shotProgress.textContent = `${SHOT_COUNT} / ${SHOT_COUNT}`;
     cameraStatus.textContent = '4컷 촬영 완료! 합성을 준비합니다.';
-    renderThumbnails();
+    renderThumbnails();\n    renderGuide();
   } catch (error) {
     if (run !== shootRun) return;
     if (error.message === 'CameraNotReady') {
@@ -418,7 +418,7 @@ let composeVersion = 0;
 const composition = document.querySelector('#composition');
 const composeStatus = document.querySelector('#compose-status');
 const visibleCanvas = document.querySelector('#result-canvas');
-const frameButtons = [...document.querySelectorAll('[data-frame]')];
+const frameButtons = [];
 
 function resetComposition() {
   resetSaveResult();
@@ -428,7 +428,7 @@ function resetComposition() {
   composeStatus.textContent = '';
   const context = visibleCanvas.getContext('2d');
   if (context) context.clearRect(0, 0, visibleCanvas.width, visibleCanvas.height);
-  frameButtons.forEach((button) => { button.disabled = false; });
+  frameButtons.forEach((button) => { button.disabled = shooting; });
 }
 
 function updateFrameButtons(index) {
@@ -471,7 +471,7 @@ async function loadFrame(src) {
 async function compose(frameIndex) {
   const version = ++composeVersion;
   if (shots.length !== SLOTS.length) return;
-  if (!FRAMES[frameIndex]) return;
+  if (!FRAMES[frameIndex] && FRAMES.length) return;
   selectedFrameIndex = frameIndex;
   resetSaveResult();
   updateFrameButtons(frameIndex);
@@ -487,7 +487,7 @@ async function compose(frameIndex) {
     canvas.height = OUT_H;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('CanvasUnavailable');
-    ctx.fillStyle = FRAMES[frameIndex].bg;
+    ctx.fillStyle = (FRAMES[frameIndex] || {bg:'#ffffff'}).bg;
     ctx.fillRect(0, 0, OUT_W, OUT_H);
 
     for (let i = 0; i < SLOTS.length; i++) {
@@ -522,7 +522,7 @@ async function compose(frameIndex) {
     visibleCanvas.width = OUT_W;
     visibleCanvas.height = OUT_H;
     screenCtx.drawImage(resultCanvas, 0, 0);
-    composeStatus.textContent = FRAMES[frameIndex].name + ' 합성이 완료됐어요.';
+    composeStatus.textContent = (FRAMES[frameIndex]?.name || '기본 프레임') + ' 합성이 완료됐어요.';
     cameraStatus.textContent = '합성 4단계: 완료';
     await prepareSaveResult(canvas, version);
   } catch (error) {
@@ -539,12 +539,7 @@ async function compose(frameIndex) {
   }
 }
 
-frameButtons.forEach((button, index) => {
-  button.textContent = FRAMES[index].name;
-  button.addEventListener('click', () => {
-    if (shots.length === SLOTS.length) void compose(index);
-  });
-});
+// 프레임 버튼은 검색이 끝난 후 동적으로 생성합니다.
 updateFrameButtons(selectedFrameIndex);
 
 
@@ -887,3 +882,188 @@ const refreshStateObserver = new MutationObserver(refreshButtonState);
 refreshStateObserver.observe(shootCancel, { attributes: true, attributeFilter: ['hidden'] });
 refreshStateObserver.observe(shotProgress, { attributes: true, attributeFilter: ['hidden'] });
 refreshButtonState();
+
+
+// 프레임 검색과 가이드 — 기존 카메라 스트림과 촬영 캔버스는 변경하지 않습니다.
+const framePicker = document.querySelector('#frame-picker');
+const resultFramePicker = document.querySelector('.frame-select');
+const guideCanvas = document.querySelector('#guide');
+const guideToggle = document.querySelector('#guide-toggle');
+const guideOpacity = document.querySelector('#guide-opacity');
+let guideCut = 1;
+let frameOptions = {};
+const frameCacheName = 'photobooth-' + APP_VERSION;
+function stored(key, fallback) {
+  try { return localStorage.getItem(key) ?? fallback; } catch (_) { return fallback; }
+}
+function store(key, value) { try { localStorage.setItem(key, String(value)); } catch (_) {} }
+guideToggle.checked = stored('guideEnabled', 'true') !== 'false';
+guideOpacity.value = stored('guideOpacity', '0.55');
+guideCanvas.style.opacity = guideOpacity.value;
+
+function renderGuide() {
+  try {
+    const ctx = guideCanvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, 1000, 750);
+    const frame = FRAMES[selectedFrameIndex];
+    if (!frame || !frame.bitmap || !guideToggle.checked || !frame.slotHasGuide?.[guideCut - 1] ||
+        !cameraStream || !cameraStream.active || completed || !composition.hidden) return;
+    const slot = SLOTS[guideCut - 1];
+    ctx.drawImage(frame.bitmap, slot.x, slot.y, slot.w, slot.h, 0, 0, 1000, 750);
+  } catch (error) { console.warn('가이드 표시 생략:', error); }
+}
+guideToggle.addEventListener('change', () => { store('guideEnabled', guideToggle.checked); renderGuide(); });
+guideOpacity.addEventListener('input', () => { guideCanvas.style.opacity = guideOpacity.value; store('guideOpacity', guideOpacity.value); });
+
+function opaqueRatio(bitmap, slot) {
+  const inset = 40, small = document.createElement('canvas');
+  small.width = 100; small.height = 75;
+  const ctx = small.getContext('2d', { willReadFrequently: true });
+  ctx.clearRect(0, 0, 100, 75);
+  ctx.drawImage(bitmap, slot.x + inset, slot.y + inset, slot.w - 2 * inset, slot.h - 2 * inset, 0, 0, 100, 75);
+  const data = ctx.getImageData(0, 0, 100, 75).data;
+  let filled = 0;
+  for (let i = 3; i < data.length; i += 4) if (data[i] >= 128) filled++;
+  return filled / (100 * 75);
+}
+function frameOptionsFor(n) {
+  const candidate = frameOptions[String(n)];
+  const o = candidate && typeof candidate === 'object' ? candidate : {};
+  return {
+    name: typeof o.name === 'string' ? o.name : '프레임 ' + n,
+    bg: typeof o.bg === 'string' && /^#[0-9a-f]{6}$/i.test(o.bg) ? o.bg : '#ffffff',
+    showDate: typeof o.showDate === 'boolean' ? o.showDate : true,
+    dateColor: typeof o.dateColor === 'string' && /^#[0-9a-f]{6}$/i.test(o.dateColor) ? o.dateColor : '#333333',
+    guide: ['auto', 'on', 'off'].includes(o.guide) ? o.guide : 'auto'
+  };
+}
+async function frameFromBlob(n, blob) {
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(blob);
+    if (bitmap.width !== OUT_W || bitmap.height !== OUT_H) {
+      console.warn('프레임 크기 불일치:', n, bitmap.width, bitmap.height);
+      bitmap.close(); return null;
+    }
+    const options = frameOptionsFor(n);
+    const slotHasGuide = SLOTS.map(slot => options.guide === 'on' ? true :
+      options.guide === 'off' ? false : opaqueRatio(bitmap, slot) >= 0.03);
+    return {n, src:'./frames/frame' + n + '.png', bitmap, slotHasGuide, ...options};
+  } catch (error) { console.warn('프레임 이미지 제외:', n, error); bitmap?.close(); return null; }
+}
+async function fetchFrameOptions(cache) {
+  let response;
+  try {
+    if (navigator.onLine) {
+      response = await fetch('./frames.json', {cache:'no-cache'});
+      if (response.ok) await cache.put('./frames.json', response.clone());
+    } else response = await cache.match('./frames.json');
+    if (response?.ok) {
+      const json = await response.json();
+      if (json && typeof json === 'object' && !Array.isArray(json)) frameOptions = json;
+    }
+  } catch (error) { console.debug('frames.json 선택 정보 생략:', error); }
+}
+async function discoverFrames() {
+  try {
+    const cache = await caches.open(frameCacheName);
+    await fetchFrameOptions(cache);
+    const entries = [];
+    if (navigator.onLine) {
+      for (let n = 1; n <= FRAME_MAX; n++) {
+        try {
+          const src = './frames/frame' + n + '.png';
+          const response = await fetch(src, {cache:'no-cache'});
+          if (!response.ok) { console.debug('프레임 없음:', src, response.status); continue; }
+          const blob = await response.blob();
+          const item = await frameFromBlob(n, blob);
+          if (!item) continue;
+          await cache.put(src, new Response(blob, {headers:{'Content-Type':'image/png'}}));
+          entries.push(item);
+        } catch (error) { console.debug('프레임 검색 생략:', n, error); }
+      }
+    } else {
+      const keys = await cache.keys();
+      const nums = [...new Set(keys.map(req => {
+        const match = new URL(req.url).pathname.match(/\/frames\/frame(\d+)\.png$/);
+        return match ? Number(match[1]) : null;
+      }).filter(n => n && n <= FRAME_MAX))].sort((a,b) => a-b);
+      for (const n of nums) {
+        try {
+          const response = await cache.match('./frames/frame' + n + '.png');
+          if (!response?.ok) continue;
+          const item = await frameFromBlob(n, await response.blob());
+          if (item) entries.push(item);
+        } catch (error) { console.debug('오프라인 프레임 제외:', n, error); }
+      }
+    }
+    entries.sort((a,b) => a.n - b.n);
+    FRAMES.splice(0, FRAMES.length, ...entries);
+    const preferred = Number(stored('lastFrame', '0'));
+    selectedFrameIndex = Math.max(0, FRAMES.findIndex(frame => frame.n === preferred));
+    buildFramePickers();
+    renderGuide();
+  } catch (error) {
+    console.warn('프레임 검색 실패, 기본 프레임 사용:', error);
+    FRAMES.splice(0);
+    selectedFrameIndex = 0;
+    buildFramePickers();
+  }
+}
+function makeFrameButton(frame, i) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'frame-option';
+  b.dataset.frame = String(i);
+  b.setAttribute('aria-pressed', String(i === selectedFrameIndex));
+  const mini = document.createElement('canvas');
+  mini.width = 74; mini.height = 90;
+  const ctx = mini.getContext('2d');
+  ctx.fillStyle = frame?.bg || '#fff'; ctx.fillRect(0, 0, 74, 90);
+  if (frame?.bitmap) ctx.drawImage(frame.bitmap, 0, 0, 74, 90);
+  const thumb = new Image(); thumb.src = mini.toDataURL('image/png');
+  b.appendChild(thumb);
+  const label = document.createElement('span');
+  label.textContent = frame?.name || '기본 프레임'; b.appendChild(label);
+  b.addEventListener('click', () => {
+    if (shooting) return;
+    selectedFrameIndex = i;
+    if (frame) store('lastFrame', frame.n);
+    updateFrameButtons(i);
+    renderGuide();
+    if (completed && shots.length === SLOTS.length) void compose(i);
+  });
+  return b;
+}
+function buildFramePickers() {
+  frameButtons.length = 0;
+  framePicker.replaceChildren(); resultFramePicker.replaceChildren();
+  const available = FRAMES.length ? FRAMES : [null];
+  available.forEach((frame, i) => {
+    const first = makeFrameButton(frame, i);
+    const second = makeFrameButton(frame, i);
+    framePicker.appendChild(first); resultFramePicker.appendChild(second);
+    frameButtons.push(first, second);
+  });
+  updateFrameButtons(selectedFrameIndex);
+}
+function synchronizeFrameUI() {
+  for (const b of frameButtons) {
+    b.disabled = shooting;
+    b.setAttribute('aria-pressed', String(Number(b.dataset.frame) === selectedFrameIndex));
+  }
+  renderGuide();
+}
+const frameSelectionObserver = new MutationObserver(synchronizeFrameUI);
+frameSelectionObserver.observe(shootCancel, { attributes:true, attributeFilter:['hidden'] });
+frameSelectionObserver.observe(shotProgress, { attributes:true, attributeFilter:['hidden'] });
+preview.addEventListener('playing', renderGuide);
+preview.addEventListener('emptied', renderGuide);
+document.addEventListener('visibilitychange', renderGuide);
+void discoverFrames();
+
+function drawFrameDate(ctx, frame) {
+  const d = new Date();
+  const date = [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('.');
+  ctx.save(); ctx.fillStyle=frame.dateColor; ctx.textAlign='center'; ctx.font='48px sans-serif'; ctx.fillText(date, OUT_W/2, 3420); ctx.restore();
+}
