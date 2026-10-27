@@ -432,10 +432,14 @@ function resetComposition() {
   frameButtons.forEach((button) => { button.disabled = shooting; });
 }
 
-function updateFrameButtons(index) {
-  frameButtons.forEach((button, i) => {
-    button.setAttribute('aria-pressed', String(index === i));
+function updateFrameSelection() {
+  const selectedNumber = FRAMES[selectedFrameIndex]?.n;
+  frameButtons.forEach((button) => {
+    button.setAttribute('aria-pressed', String(Number(button.dataset.frame) === selectedNumber));
   });
+}
+function updateFrameButtons(index) {
+  updateFrameSelection();
 }
 
 function drawCover(ctx, source, slot) {
@@ -1015,8 +1019,8 @@ async function discoverFrames() {
 function makeFrameButton(frame, i) {
   const b = document.createElement('button');
   b.type = 'button'; b.className = 'frame-option';
-  b.dataset.frame = String(i);
-  b.setAttribute('aria-pressed', String(i === selectedFrameIndex));
+  b.dataset.frame = String(frame.n);
+  b.setAttribute('aria-pressed', 'false');
   const mini = document.createElement('canvas');
   mini.width = 74; mini.height = 90;
   const ctx = mini.getContext('2d');
@@ -1030,7 +1034,7 @@ function makeFrameButton(frame, i) {
     if (shooting) return;
     selectedFrameIndex = i;
     if (frame) store('lastFrame', frame.n);
-    updateFrameButtons(i);
+    updateFrameSelection();
     renderGuide();
     if (completed && shots.length === SLOTS.length) void compose(i);
   });
@@ -1039,20 +1043,17 @@ function makeFrameButton(frame, i) {
 function buildFramePickers() {
   frameButtons.length = 0;
   framePicker.replaceChildren(); resultFramePicker.replaceChildren();
-  const available = FRAMES.length ? FRAMES : [null];
-  available.forEach((frame, i) => {
+  FRAMES.forEach((frame, i) => {
     const first = makeFrameButton(frame, i);
     const second = makeFrameButton(frame, i);
     framePicker.appendChild(first); resultFramePicker.appendChild(second);
     frameButtons.push(first, second);
   });
-  updateFrameButtons(selectedFrameIndex);
+  updateFrameSelection();
 }
 function synchronizeFrameUI() {
-  for (const b of frameButtons) {
-    b.disabled = shooting;
-    b.setAttribute('aria-pressed', String(Number(b.dataset.frame) === selectedFrameIndex));
-  }
+  for (const b of frameButtons) b.disabled = shooting;
+  updateFrameSelection();
   renderGuide();
 }
 const frameSelectionObserver = new MutationObserver(synchronizeFrameUI);

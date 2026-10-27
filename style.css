@@ -96,3 +96,8 @@ footer { font-size: .78rem; color: #888; text-align: center; }
 .frame-option:disabled { opacity: .45; }
 .frame-option img,.frame-option .frame-placeholder { display: block; width: 74px; height: 90px; object-fit: cover; margin: auto auto 4px; }
 .frame-option .frame-placeholder { display: grid; place-items: center; font-size: 10px; }
+
+/* 선택 강조: 모든 썸네일에 동일한 3px 테두리를 확보합니다. */
+.frame-option { border: 3px solid transparent; transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+.frame-option[aria-pressed="true"] { border-color: #ff4d79; transform: scale(1.05); box-shadow: 0 0 0 2px #ff4d7940; }
+.frame-option[aria-pressed="false"] { border-color: #d5d5d5; transform: none; box-shadow: none; }
