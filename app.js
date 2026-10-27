@@ -741,7 +741,7 @@ async function shortRefresh() {
   refreshBusy = true;
   refreshButtonState();
   if (!navigator.onLine) {
-    cameraStatus.textContent = '오프라인이라 업데이트는 확인하지 않아요';
+    cameraStatus.textContent = '오프라인이거나 연결이 불안정해요. 업데이트는 확인하지 않아요';
     setTimeout(reloadPage, 1500);
     return;
   }
@@ -788,18 +788,11 @@ async function shortRefresh() {
       worker.addEventListener('statechange', () => sendSkip(worker));
     };
     navigator.serviceWorker.addEventListener('controllerchange', changed);
-    timer = setTimeout(async () => {
+    timer = setTimeout(() => {
       if (finished) return;
       finished = true;
       navigator.serviceWorker.removeEventListener('controllerchange', changed);
-      try {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(registrations.map(reg => reg.unregister()));
-        const keys = await caches.keys();
-        await Promise.all(keys.map(key => caches.delete(key)));
-      } catch (error) {
-        reportRefreshError(error);
-      }
+      cameraStatus.textContent = '업데이트를 확인하지 못했어요. 잠시 후 다시 시도해 주세요';
       reloadPage();
     }, 6000);
     // 리스너를 먼저 설치하여 설치 완료 이벤트를 놓치지 않습니다.
@@ -811,9 +804,8 @@ async function shortRefresh() {
     onState(registration.installing);
   } catch (error) {
     reportRefreshError(error);
-    cameraStatus.textContent = '업데이트 확인에 실패했어요.';
-    refreshBusy = false;
-    refreshButtonState();
+    cameraStatus.textContent = '오프라인이거나 연결이 불안정해요. 업데이트는 확인하지 않아요';
+    setTimeout(reloadPage, 1500);
   }
 }
 
@@ -828,6 +820,12 @@ async function longRefresh() {
   refreshBusy = true;
   refreshButtonState();
   try {
+    // 오프라인 리소스 삭제 전에 실제 배포 서버의 필수 파일을 확인합니다.
+    const required = ['./version.js?t=' + Date.now(), './index.html', './app.js', './sw.js', './style.css'];
+    for (const url of required) {
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) throw new Error('서버 파일 확인 실패: ' + url + ' (HTTP ' + response.status + ')');
+    }
     if ('serviceWorker' in navigator) {
       const registrations = await navigator.serviceWorker.getRegistrations();
       await Promise.all(registrations.map(async (registration) => {
@@ -844,7 +842,7 @@ async function longRefresh() {
     reloadPage();
   } catch (error) {
     reportRefreshError(error);
-    cameraStatus.textContent = '초기화에 실패했어요. 다시 시도해 주세요.';
+    cameraStatus.textContent = '인터넷 연결을 확인해 주세요. 지금 지우면 앱이 열리지 않을 수 있어요.';
     refreshBusy = false;
     refreshButtonState();
   }
