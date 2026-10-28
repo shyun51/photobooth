@@ -1,7 +1,7 @@
 [hidden]{display:none !important}
 :root{
  --bg:#FFF6E5;--ink:#14301F;--green:#14472E;--stage:#1F3D2D;--muted:#4F6355;--orange:#FF8A1F;--orange-shadow:#C9650A;--pink:#FF4F9A;--sand:#FFE3B8;--card:#FFFFFF;--card-shadow:#E6D3B0;--danger:#bd1c25;--leaf:#4C7A5F;
- --event-name:"[학교 · 축제 이름]";
+ --event-name:"대구제일고 축제";
  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
  color:var(--ink);background:var(--bg);color-scheme:light;
 }
@@ -82,3 +82,82 @@ footer{font-size:14px;color:var(--muted);text-align:center}
 #version-indicator:has(#ver.version-mismatch),#version-indicator:has(#update-app:not([hidden])){opacity:1}
 #update-app{min-height:44px;font-size:14px;font-weight:700;margin:0;padding:8px 12px;border-radius:12px}
 #global-error{position:fixed;left:calc(10px + env(safe-area-inset-left));right:calc(10px + env(safe-area-inset-right));bottom:calc(84px + env(safe-area-inset-bottom));z-index:1001;padding:14px;border-radius:12px;background:var(--danger);color:var(--card);font-size:14px;line-height:1.4;overflow-wrap:anywhere;max-height:35dvh;overflow-y:auto;cursor:pointer;box-shadow:0 4px 12px var(--card-shadow)}
+
+/* v15 single-viewport screens; ordinary styles above remain safe fallback */
+html,body{height:100vh;height:100dvh;margin:0;overflow:hidden;overscroll-behavior:none}
+.app{height:100vh;height:100dvh;min-height:0;overflow:hidden;gap:clamp(4px,1dvh,12px);padding:calc(8px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(65px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left))}
+.topbar{flex:0 0 auto;min-height:38px;gap:8px}.brand{font-size:clamp(18px,2.7vw,27px)}
+.topbar::after{font-size:clamp(14px,1.7vw,16px);padding:5px 12px}#network{font-size:14px}
+.content{flex:1 1 auto;min-height:0;gap:clamp(3px,.8dvh,10px);justify-content:center}
+.camera-panel{width:min(92vw,720px);max-width:100%;margin:0 auto;gap:clamp(4px,1dvh,10px);min-height:0}
+.camera-stage{flex:0 1 auto;width:min(100%,max(1px,calc((100dvh - 430px)*4/3)));max-height:calc(100dvh - 400px);margin:0 auto;aspect-ratio:4/3}
+#preview-wrap{width:100%;height:100%;aspect-ratio:4/3}#preview{width:100%;height:100%;object-fit:cover}
+#guide{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#heading{font-size:clamp(22px,4.2vw,44px);margin:0}
+.content>p:not(#mode):not(#feedback){font-size:clamp(14px,2vw,20px);line-height:1.3}
+.camera-controls,.shoot-controls{gap:clamp(6px,1.3vw,16px)}
+.camera-controls button,.shoot-controls button{min-height:clamp(44px,6.2dvh,64px);font-size:clamp(14px,2.4vw,22px)}
+.guide-controls{font-size:14px;gap:8px}.guide-controls label{min-height:44px}
+#status,#compose-status{font-size:clamp(14px,1.6vw,16px)}
+.frame-picker,.frame-select{padding:14px 10px;gap:12px;overflow-x:auto;overflow-y:auto;min-height:0;max-height:clamp(102px,16dvh,156px)}
+.frame-option{width:112px;min-width:112px;flex:0 0 112px;min-height:0;padding:0;border:3px solid transparent;background:transparent;box-shadow:none;border-radius:14px;gap:4px;font-size:14px;font-weight:700}
+.frame-option img,.frame-option .frame-placeholder{width:100%;height:clamp(64px,9dvh,92px);border:3px solid var(--green);border-radius:14px;object-fit:cover}
+.frame-option[aria-pressed="true"]{transform:none;box-shadow:none}
+.frame-option[aria-pressed="true"] img{box-shadow:0 0 0 5px var(--pink);transform:scale(1.04)}
+.frame-option[aria-pressed="false"] img{transform:none;box-shadow:none}
+footer,#test-button,#feedback,#mode{display:none}
+#version-indicator{opacity:.5;bottom:calc(5px + env(safe-area-inset-bottom));right:calc(5px + env(safe-area-inset-right));gap:4px}
+.refresh-control small{display:none}#btn-refresh{min-width:44px;min-height:44px;width:44px;height:44px}
+#ver.version-mismatch{color:var(--danger);opacity:1}
+#version-indicator:has(#update-app:not([hidden])),#version-indicator:has(#ver.version-mismatch){opacity:1}
+.preview{width:min(155px,20dvh);max-height:25dvh;padding:8px 8px 18px;transform:rotate(-2deg);gap:3px}
+#composition{min-height:0;max-height:calc(100dvh - 108px);overflow:hidden;grid-template-columns:minmax(85px,min(27vw,calc((100dvh - 170px)/3))) minmax(0,1fr);gap:clamp(6px,1vw,16px);padding:clamp(7px,1.5vw,16px);margin:0 auto;width:min(100%,920px);flex:1}
+#composition h2{font-size:clamp(14px,2vw,20px);margin:0}
+.composition-scroll{grid-row:2/span 5;max-height:calc(100dvh - 170px);height:min(100%,calc(100dvh - 170px));width:100%;aspect-ratio:1/3;overflow-y:auto;overflow-x:hidden}
+#result-canvas{display:block;width:100%;height:auto}
+.save-toolbar{position:relative;top:auto;grid-column:2;grid-row:2;padding:clamp(6px,1vw,16px);gap:3px;box-shadow:none}
+.save-toolbar #save-result{min-height:44px;font-size:clamp(14px,2vw,22px)}
+.save-toolbar small{font-size:14px}#composition .frame-select{grid-column:2;grid-row:3;width:100%}
+#compose-status{grid-column:2;grid-row:4}
+#save-fallback{grid-column:2;grid-row:5;overflow:auto;max-height:35dvh}
+#save-fallback img{max-width:100%;max-height:48dvh;object-fit:contain}
+#shot-results{display:none}
+#countdown{font-size:clamp(70px,20dvh,260px)}
+/* A: camera off or error */
+.app:has(#start-camera:not([hidden])):has(#composition[hidden]) .camera-stage{height:1px;width:1px;min-height:0;max-height:1px;opacity:0;pointer-events:none}
+.app:has(#start-camera:not([hidden])):has(#composition[hidden]) #status{font-weight:700}
+/* B: ready */
+.app:has(#start-camera[hidden]):has(#shoot-cancel[hidden]):has(#composition[hidden]) .preview,
+.app:has(#start-camera[hidden]):has(#shoot-cancel[hidden]):has(#composition[hidden]) #heading,
+.app:has(#start-camera[hidden]):has(#shoot-cancel[hidden]):has(#composition[hidden]) .content>p:not(#mode):not(#feedback){display:none}
+/* C: capture */
+.app:has(#shoot-cancel:not([hidden])):has(#composition[hidden]) .preview,
+.app:has(#shoot-cancel:not([hidden])):has(#composition[hidden]) #heading,
+.app:has(#shoot-cancel:not([hidden])):has(#composition[hidden]) .content>p:not(#mode):not(#feedback),
+.app:has(#shoot-cancel:not([hidden])):has(#composition[hidden]) #frame-picker,
+.app:has(#shoot-cancel:not([hidden])):has(#composition[hidden]) .camera-controls,
+.app:has(#shoot-cancel:not([hidden])):has(#composition[hidden]) #shoot-start{display:none}
+/* D: results; never display:none the camera stage or video */
+.app:has(#composition:not([hidden])) .preview,
+.app:has(#composition:not([hidden])) #heading,
+.app:has(#composition:not([hidden])) .content>p:not(#mode):not(#feedback),
+.app:has(#composition:not([hidden])) .guide-controls,
+.app:has(#composition:not([hidden])) #frame-picker,
+.app:has(#composition:not([hidden])) #switch-camera,
+.app:has(#composition:not([hidden])) #shoot-start,
+.app:has(#composition:not([hidden])) #status{display:none}
+.app:has(#composition:not([hidden])) .content{display:contents}
+.app:has(#composition:not([hidden])) .camera-panel{position:fixed;right:calc(16px + env(safe-area-inset-right));bottom:calc(64px + env(safe-area-inset-bottom));width:auto;max-width:40vw;z-index:25;pointer-events:none}
+.app:has(#composition:not([hidden])) .camera-stage{position:absolute;width:1px;height:1px;max-height:1px;opacity:0;pointer-events:none;overflow:hidden}
+.app:has(#composition:not([hidden])) .camera-controls{display:none}
+.app:has(#composition:not([hidden])) .shoot-controls{width:auto;pointer-events:auto}
+.app:has(#composition:not([hidden])) #shoot-retry{min-height:44px;font-size:clamp(14px,2vw,20px);padding:0 12px}
+.app:has(#composition:not([hidden])) #composition{display:grid}
+/* E: long-press image fallback */
+.app:has(#save-fallback:not([hidden])) #composition{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto}
+.app:has(#save-fallback:not([hidden])) #composition .composition-scroll{display:none}
+.app:has(#save-fallback:not([hidden])) #save-fallback{grid-column:1;grid-row:3;max-height:calc(100dvh - 330px);text-align:center}
+.app:has(#save-fallback:not([hidden])) #save-fallback img{max-height:calc(100dvh - 385px);margin:auto}
+.app:has(#save-fallback:not([hidden])) .save-toolbar{grid-column:1;grid-row:2}
+.app:has(#save-fallback:not([hidden])) .frame-select{display:none}
+.app:has(#save-fallback:not([hidden])) #compose-status{grid-column:1;grid-row:4}
