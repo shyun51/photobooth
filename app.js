@@ -486,7 +486,7 @@ async function compose(frameIndex) {
   frameButtons.forEach((button) => { button.disabled = true; });
   let bitmap = null;
   try {
-    cameraStatus.textContent = '합성 1단계: 캔버스 생성';
+    console.debug('합성 1단계: 캔버스 생성');
     const canvas = document.createElement('canvas');
     canvas.width = OUT_W;
     canvas.height = OUT_H;
@@ -496,7 +496,7 @@ async function compose(frameIndex) {
     ctx.fillRect(0, 0, OUT_W, OUT_H);
 
     for (let i = 0; i < SLOTS.length; i++) {
-      cameraStatus.textContent = '합성 2단계: 사진 그리기 ' + (i + 1) + ' / ' + SLOTS.length;
+      console.debug('합성 2단계: 사진 그리기 ' + (i + 1) + ' / ' + SLOTS.length);
       bitmap = await createImageBitmap(shots[i]);
       if (version !== composeVersion) return;
       drawCover(ctx, bitmap, SLOTS[i]);
@@ -504,7 +504,7 @@ async function compose(frameIndex) {
       bitmap = null;
     }
 
-    cameraStatus.textContent = '합성 3단계: 프레임 로드';
+    console.debug('합성 3단계: 프레임 로드');
     try {
       bitmap = await loadFrame(FRAMES[frameIndex].src);
       if (version !== composeVersion) return;
@@ -528,7 +528,7 @@ async function compose(frameIndex) {
     visibleCanvas.height = OUT_H;
     screenCtx.drawImage(resultCanvas, 0, 0);
     composeStatus.textContent = (FRAMES[frameIndex]?.name || '기본 프레임') + ' 합성이 완료됐어요.';
-    cameraStatus.textContent = '합성 4단계: 완료';
+    console.debug('합성 4단계: 완료');
     await prepareSaveResult(canvas, version);
   } catch (error) {
     console.error('4컷 합성 오류:', error);
