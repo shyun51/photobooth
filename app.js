@@ -461,7 +461,7 @@ function fallbackLabel(ctx) {
   ctx.font = '42px sans-serif';
   ctx.fillText(date, OUT_W / 2, OUT_H - 240);
   ctx.font = 'bold 76px sans-serif';
-  ctx.fillText('인생네컷', OUT_W / 2, OUT_H - 145);
+  ctx.fillText(APP_TITLE, OUT_W / 2, OUT_H - 145);
   ctx.restore();
 }
 
@@ -626,7 +626,7 @@ saveResultButton.addEventListener('click', () => {
     return;
   }
   const file = resultFile;
-  const payload = { files: [file], title: '인생네컷' };
+  const payload = { files: [file], title: APP_TITLE };
   try {
     if (typeof navigator.share !== 'function' ||
         typeof navigator.canShare !== 'function' ||
