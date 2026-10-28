@@ -549,6 +549,7 @@ updateFrameButtons(selectedFrameIndex);
 
 
 // 저장용 PNG는 공유 버튼을 누르기 전에 비동기로 만들어 둡니다.
+const SAVE_MODE = 'longpress';
 let resultBlob = null;
 let resultFile = null;
 let saveFallbackURL = null;
@@ -620,6 +621,10 @@ function reportShareFailure(error) {
 // 사용자 클릭 핸들러: 공유 호출 전에 await를 하지 않습니다.
 saveResultButton.addEventListener('click', () => {
   if (!resultFile || !resultBlob || saveResultButton.disabled) return;
+  if (SAVE_MODE === 'longpress') {
+    showSaveFallback();
+    return;
+  }
   const file = resultFile;
   const payload = { files: [file], title: '인생네컷' };
   try {
