@@ -188,3 +188,6 @@ footer,#test-button,#feedback,#mode{display:none}
 .app:has(#composition:not([hidden])) .camera-panel{bottom:calc(104px + env(safe-area-inset-bottom))}
 .app:has(#composition:not([hidden])) #shoot-retry{min-height:56px;min-width:160px;font-size:20px}
 #version-indicator{right:max(16px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom))}
+
+/* v17: E-screen long-press saving instruction */
+.app:has(#save-fallback:not([hidden])) #save-fallback p{font-size:clamp(20px,2.4vw,24px);color:var(--ink);font-weight:800;line-height:1.4}
