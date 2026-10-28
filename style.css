@@ -234,3 +234,6 @@ footer,#test-button,#feedback,#mode{display:none}
   right:max(56px,calc((100vw - 920px)/2 + 56px));
   bottom:calc(110px + env(safe-area-inset-bottom));
 }
+
+/* v19 task 2: keep both digits of 10 within the 4:3 camera stage. */
+#countdown{font-size:clamp(70px,min(20dvh,18vw),260px)}
