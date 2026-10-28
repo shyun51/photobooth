@@ -35,5 +35,15 @@
     "name": "혼자 찍기 ②",
     "group": "solo",
     "guide": "off"
+  },
+  "9": {
+    "name": "혼자 찍기 ③",
+    "group": "solo",
+    "guide": "off"
+  },
+  "10": {
+    "name": "혼자 찍기 ④",
+    "group": "solo",
+    "guide": "off"
   }
 }
