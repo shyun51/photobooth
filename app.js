@@ -170,7 +170,7 @@ document.addEventListener('visibilitychange', () => {
 
 
 // 4컷 연속 촬영: 기존 카메라 시작/전환/오류 코드는 변경하지 않습니다.
-const COUNTDOWN_SEC = 10;
+const COUNTDOWN_SEC = 5;
 const SHOT_COUNT = 4;
 const MIRROR_SAVED = true;
 const shots = [];
