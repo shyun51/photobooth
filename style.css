@@ -228,3 +228,9 @@ footer,#test-button,#feedback,#mode{display:none}
     animation:none;outline:3px solid var(--orange);box-shadow:none;
   }
 }
+
+/* v19 task 1: results retry placement, measured against the centered composition card width. */
+.app:has(#composition:not([hidden])) .camera-panel{
+  right:max(56px,calc((100vw - 920px)/2 + 56px));
+  bottom:calc(110px + env(safe-area-inset-bottom));
+}
