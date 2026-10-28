@@ -18,8 +18,9 @@
   <script src="./app.js" defer></script>
 </head>
 <body>
+  <div id="pick-screen" hidden><div id="pick-title"></div><p>누구와 찍을까요?</p><button id="pick-with" type="button">목사님과 함께 찍기</button><button id="pick-solo" type="button">혼자 찍기</button></div>
   <main class="app">
-    <header class="topbar"><span class="brand">인생네컷</span><span id="network" class="status" role="status" aria-live="polite">상태 확인 중</span></header>
+    <header class="topbar"><span class="brand">인생네컷</span><button id="btn-home" type="button" hidden>처음으로</button><span id="network" class="status" role="status" aria-live="polite">상태 확인 중</span></header>
     <section class="content" aria-labelledby="heading">
       <div class="preview" aria-hidden="true"><div></div><div></div><div></div><div></div></div>
       <div class="camera-panel">
