@@ -1,0 +1,32 @@
+{
+  "1": {
+    "name": "목사님과 함께 ①",
+    "group": "with",
+    "guide": "on"
+  },
+  "2": {
+    "name": "목사님과 함께 ②",
+    "group": "with",
+    "guide": "on"
+  },
+  "3": {
+    "name": "목사님과 함께 ③",
+    "group": "with",
+    "guide": "on"
+  },
+  "4": {
+    "name": "목사님과 함께 ④",
+    "group": "with",
+    "guide": "on"
+  },
+  "5": {
+    "name": "혼자 찍기 ①",
+    "group": "solo",
+    "guide": "off"
+  },
+  "6": {
+    "name": "혼자 찍기 ②",
+    "group": "solo",
+    "guide": "off"
+  }
+}
