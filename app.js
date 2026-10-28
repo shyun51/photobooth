@@ -898,6 +898,15 @@ refreshButtonState();
 
 // 프레임 검색과 가이드 — 기존 카메라 스트림과 촬영 캔버스는 변경하지 않습니다.
 const framePicker = document.querySelector('#frame-picker');
+let selectedParty = null;
+const pickScreen = document.querySelector('#pick-screen');
+const pickWith = document.querySelector('#pick-with');
+const pickSolo = document.querySelector('#pick-solo');
+const homeButton = document.querySelector('#btn-home');
+try {
+  document.querySelector('#pick-title').textContent = APP_TITLE;
+  pickScreen.hidden = false;
+} catch (error) { console.warn('선택 화면 초기화 실패:', error); }
 const resultFramePicker = document.querySelector('.frame-select');
 const guideCanvas = document.querySelector('#guide');
 const guideToggle = document.querySelector('#guide-toggle');
@@ -1014,12 +1023,15 @@ async function discoverFrames() {
     FRAMES.splice(0, FRAMES.length, ...entries);
     const preferred = Number(stored('lastFrame', '0'));
     selectedFrameIndex = Math.max(0, FRAMES.findIndex(frame => frame.n === preferred));
+    refreshPartyAvailability();
+    if (selectedParty) selectPartyFrame();
     buildFramePickers();
     renderGuide();
   } catch (error) {
     console.warn('프레임 검색 실패, 기본 프레임 사용:', error);
     FRAMES.splice(0);
     selectedFrameIndex = 0;
+    refreshPartyAvailability();
     buildFramePickers();
   }
 }
@@ -1050,7 +1062,9 @@ function makeFrameButton(frame, i) {
 function buildFramePickers() {
   frameButtons.length = 0;
   framePicker.replaceChildren(); resultFramePicker.replaceChildren();
+  if (!selectedParty) return;
   FRAMES.forEach((frame, i) => {
+    if (!frameInParty(frame, selectedParty)) return;
     const first = makeFrameButton(frame, i);
     const second = makeFrameButton(frame, i);
     framePicker.appendChild(first); resultFramePicker.appendChild(second);
@@ -1069,6 +1083,63 @@ frameSelectionObserver.observe(shotProgress, { attributes:true, attributeFilter:
 preview.addEventListener('playing', renderGuide);
 preview.addEventListener('emptied', renderGuide);
 document.addEventListener('visibilitychange', renderGuide);
+function frameInParty(frame, party) {
+  const option = frameOptions[String(frame.n)];
+  if (!option || !['with', 'solo'].includes(option.group)) {
+    console.warn('그룹 미지정 프레임:', frame.n);
+    return false;
+  }
+  return option.enabled !== false && option.group === party;
+}
+function refreshPartyAvailability() {
+  try {
+    for (const [button, party, label] of [[pickWith,'with','목사님과 함께 찍기'],[pickSolo,'solo','혼자 찍기']]) {
+      const ready = FRAMES.some(frame => frameInParty(frame, party));
+      button.disabled = !ready;
+      button.textContent = ready ? label : label + ' · 준비 중';
+    }
+  } catch (error) { console.warn('그룹 목록 실패:', error); }
+}
+function selectPartyFrame() {
+  try {
+    const choices = FRAMES.map((frame,i) => frameInParty(frame,selectedParty) ? i : -1).filter(i => i >= 0);
+    if (!choices.length) return;
+    const saved = Number(stored('lastFrame','0'));
+    selectedFrameIndex = choices.find(i => FRAMES[i].n === saved) ?? choices[0];
+    updateFrameSelection();
+    renderGuide();
+  } catch (error) { console.warn('프레임 선택 실패:', error); }
+}
+function chooseParty(party) {
+  try {
+    if (shooting || !FRAMES.some(frame => frameInParty(frame,party))) return;
+    selectedParty = party;
+    document.body.dataset.party = party;
+    pickScreen.hidden = true;
+    homeButton.hidden = false;
+    selectPartyFrame();
+    buildFramePickers();
+    renderGuide();
+  } catch (error) { console.warn('그룹 선택 실패:', error); }
+}
+pickWith.addEventListener('click', () => { try { chooseParty('with'); } catch(e) { console.warn(e); } });
+pickSolo.addEventListener('click', () => { try { chooseParty('solo'); } catch(e) { console.warn(e); } });
+homeButton.addEventListener('click', () => {
+  try {
+    if (shooting) return;
+    cancelShooting('카메라 시작 버튼을 눌러주세요.');
+    ++cameraRequestId;
+    stopCamera();
+    resetCameraUI('카메라 시작 버튼을 눌러주세요.');
+    selectedParty = null;
+    delete document.body.dataset.party;
+    homeButton.hidden = true;
+    pickScreen.hidden = false;
+    buildFramePickers();
+    refreshPartyAvailability();
+  } catch (error) { console.warn('처음으로 실패:', error); }
+});
+refreshPartyAvailability();
 void discoverFrames();
 
 function drawFrameDate(ctx, frame) {
