@@ -1,5 +1,5 @@
 // Change only this value to update the photobooth's displayed title.
-const APP_TITLE = '261029';
+const APP_TITLE = '네컷[261029]';
 
 document.title = APP_TITLE;
 document.querySelector('.brand').textContent = APP_TITLE;
