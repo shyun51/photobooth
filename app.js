@@ -476,7 +476,7 @@ async function loadFrame(src) {
 async function compose(frameIndex) {
   const version = ++composeVersion;
   if (shots.length !== SLOTS.length) return;
-  if (!FRAMES[frameIndex] && FRAMES.length) return;
+  // An unavailable frame uses the existing fallback label instead of aborting composition.
   selectedFrameIndex = frameIndex;
   resetSaveResult();
   updateFrameButtons(frameIndex);
@@ -506,9 +506,13 @@ async function compose(frameIndex) {
 
     console.debug('합성 3단계: 프레임 로드');
     try {
-      bitmap = await loadFrame(FRAMES[frameIndex].src);
-      if (version !== composeVersion) return;
-      ctx.drawImage(bitmap, 0, 0, OUT_W, OUT_H);
+      if (FRAMES[frameIndex]) {
+        bitmap = await loadFrame(FRAMES[frameIndex].src);
+        if (version !== composeVersion) return;
+        ctx.drawImage(bitmap, 0, 0, OUT_W, OUT_H);
+      } else {
+        fallbackLabel(ctx);
+      }
     } catch (frameError) {
       console.warn('프레임 PNG를 불러오지 못해 기본 프레임으로 표시합니다:', frameError);
       cameraStatus.textContent = '프레임 파일 없음 · 기본 프레임 적용';
